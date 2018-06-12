@@ -1,8 +1,8 @@
 """
 DataX 基于日志的性能分析工具
 
-
 限时1小时做工具，做成啥样是啥样
+2018-06
 """
 
 __python__ = 3.6
@@ -27,16 +27,20 @@ def time_cost_info_extract(content, file_name):
 		wait_reader_time = re.findall("All Task WaitReaderTime (.*?)s", content)[-1]
 		transformer_time = re.findall("Transformer usedTime (.*?)s", content)[-1]
 		transformer_name = re.findall("transformer init success. name=(.*?),", content)[-1]
+		channel_num = re.findall('"channel":(\d+)', content)[-1]
 		paras = re.findall('Using (.*?) encryption', content)
-		if paras and paras[0] in ["AES", "FPE"]:
+		if paras and paras[0] in ["AES_E", "AES_D", "FPE", "RSA"]:
 			transformer_name = transformer_name + "-"+ paras[0]
+			if paras[0] == "RSA":
+				transformer_name = file_name.split('1')[0]
 		return {
 			"wait_writer_time":wait_writer_time, 
 			"wait_reader_time":wait_reader_time, 
 			"transformer_time":transformer_time,
 			"item_num":total_item_num,
 			"total_time":total_time_cost,
-			"transformer":transformer_name
+			"transformer":transformer_name,
+			"channel": channel_num
 		}
 	except IndexError as e:
 		print(e)
@@ -55,8 +59,8 @@ def system_info_extract(content):
 	}
 
 
-
 def check_log_dir(directory):
+	"""建议输入dataX的log目录"""
 	result = {}
 	logs = filter(lambda x:x.endswith('.log'), os.listdir(directory))
 	for log_name in logs:
@@ -97,12 +101,11 @@ def transformer_plot(log_result):
 		plt.plot(np.log10(y), label=data)
 	plt.legend()
 	plt.show()
-	#return data_set
 
 
 
 if __name__ == '__main__':
 	import pprint
-	result = check_log_dir(r"C:\Users\LabUser\Desktop\DataXMasker\性能实验\性能曲线绘制\实验结果\补测\读CSV补测结果")
-	pprint.pprint(transformer_plot(result))
+	result = check_log_dir(r"C:\Users\LabUser\Desktop\DataXMasker\性能实验\性能曲线绘制\实验结果\并发情况下的性能测试\channel5_log")
+	# pprint.pprint(transformer_plot(result))
 	pprint.pprint(result)
